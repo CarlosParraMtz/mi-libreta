@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function platformAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function businessData(businessId) {
+      return get(/databases/$(database)/documents/businesses/$(businessId)).data;
+    }
+
+    function businessMember(businessId) {
+      return signedIn() && request.auth.uid in businessData(businessId).memberIds;
+    }
+
+    function businessAdmin(businessId) {
+      return signedIn() && (
+        request.auth.uid == businessData(businessId).ownerId ||
+        request.auth.uid in businessData(businessId).adminIds
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if platformAdmin();
+    }
+
+    match /businesses/{businessId} {
+      allow read: if businessMember(businessId) || platformAdmin();
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if businessAdmin(businessId) || platformAdmin();
+      allow delete: if platformAdmin() || (signedIn() && request.auth.uid == resource.data.ownerId);
+    }
+
+    // Las invitaciones sólo se leen y escriben desde la Lambda con Firebase Admin.
+    match /businessInvites/{inviteId} {
+      allow read, write: if false;
+    }
+  }
+}

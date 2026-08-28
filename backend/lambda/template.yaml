@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: API central de Mi Libreta
+
+Resources:
+  MiLibretaApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AppOrigin
+        AllowHeaders:
+          - authorization
+          - content-type
+          - stripe-signature
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - OPTIONS
+
+  MiLibretaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: dist/handler.handler
+      CodeUri: .
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          APP_URL: !Ref AppOrigin
+          ADMIN_EMAILS: !Ref AdminEmails
+          FIREBASE_SERVICE_ACCOUNT_JSON: !Ref FirebaseServiceAccountJson
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+          STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+          STRIPE_PRICE_ID: !Ref StripePriceId
+          SES_FROM_EMAIL: !Ref SesFromEmail
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+              Resource: '*'
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MiLibretaApi
+            Path: /{proxy+}
+            Method: ANY
+
+Parameters:
+  AppOrigin:
+    Type: String
+    Default: http://localhost:5173
+  AdminEmails:
+    Type: String
+    Description: Correos separados por coma que recibirán el rol admin de plataforma
+  FirebaseServiceAccountJson:
+    Type: String
+    NoEcho: true
+  StripeSecretKey:
+    Type: String
+    NoEcho: true
+  StripeWebhookSecret:
+    Type: String
+    NoEcho: true
+  StripePriceId:
+    Type: String
+  SesFromEmail:
+    Type: String
+    Default: ''
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${MiLibretaApi}.execute-api.${AWS::Region}.amazonaws.com

@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #f7f3e9;
+  --color-ink: #1d2922;
+  --color-coral: #e65d46;
+  --color-lime: #d9ef88;
+  --color-peach: #ffc6a7;
+  --color-sky: #a9dcec;
+  --color-lilac: #d8c8ef;
+  --color-mint: #aee5ba;
+  --shadow-soft: 0 8px 30px rgba(29, 41, 34, 0.08);
+  --shadow-card: 0 20px 50px rgba(29, 41, 34, 0.18);
+}
+
+* { box-sizing: border-box; }
+html { background: #f7f3e9; }
+body { margin: 0; min-width: 320px; min-height: 100vh; font-family: Inter, ui-rounded, "SF Pro Rounded", system-ui, sans-serif; color: #1d2922; }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+::selection { background: #d9ef88; color: #1d2922; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
