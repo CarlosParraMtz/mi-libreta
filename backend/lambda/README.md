@@ -12,7 +12,7 @@ Una sola Lambda atiende:
 
 ## Variables requeridas
 
-- `APP_URL`: URL pública del frontend.
+- `APP_URL`: URL pública del frontend. Para producción usa `https://milibreta.web.app`.
 - `ADMIN_EMAILS`: correos de administradores de plataforma separados por coma. Agrega aquí tu correo.
 - `FIREBASE_SERVICE_ACCOUNT_JSON`: JSON completo de una cuenta de servicio de Firebase.
 - `STRIPE_SECRET_KEY`: clave secreta de Stripe.

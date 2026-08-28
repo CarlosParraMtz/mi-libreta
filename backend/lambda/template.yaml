@@ -53,7 +53,7 @@ Resources:
 Parameters:
   AppOrigin:
     Type: String
-    Default: http://localhost:5173
+    Default: https://milibreta.web.app
   AdminEmails:
     Type: String
     Description: Correos separados por coma que recibirán el rol admin de plataforma

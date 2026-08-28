@@ -2,6 +2,14 @@
   "projects": {
     "milibreta": "notebook-ef6da"
   },
-  "targets": {},
+  "targets": {
+    "notebook-ef6da": {
+      "hosting": {
+        "milibreta": [
+          "milibreta"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

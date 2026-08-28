@@ -11,12 +11,24 @@ npm run dev
 
 Copia `.env.example` como `.env.local` y configura Firebase y `VITE_API_BASE_URL`.
 
+## Publicación del frontend
+
+El target de Firebase Hosting está configurado para `https://milibreta.web.app`.
+
+```bash
+npm run build
+firebase deploy --only hosting:milibreta
+```
+
+Las rutas de React Router se resuelven mediante el rewrite de Hosting hacia `index.html`.
+
 ## Firebase
 
 1. Habilita **Correo/contraseña** y **Google** en Firebase Authentication.
-2. Crea Cloud Firestore.
-3. Publica `firestore.rules`.
-4. Crea una cuenta de servicio para la Lambda y guarda su JSON únicamente como secreto de AWS.
+2. En **Authentication → Settings → Authorized domains**, confirma que aparezca `milibreta.web.app`.
+3. Crea Cloud Firestore.
+4. Publica `firestore.rules`.
+5. Crea una cuenta de servicio para la Lambda y guarda su JSON únicamente como secreto de AWS.
 
 Cada usuario tiene un perfil en `users/{uid}`. El campo `defaultBusinessId` señala la libreta activa y cada documento `businesses/{businessId}` contiene miembros, administradores, configuración, movimientos y estado de Stripe.
 

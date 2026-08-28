@@ -5,6 +5,7 @@ node_modules/
 dist/
 dist-ssr/
 .aws-sam/
+samconfig.toml
 .vite/
 .cache/
 .turbo/
