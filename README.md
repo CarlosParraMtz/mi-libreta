@@ -40,7 +40,7 @@ La API migra automáticamente el formato anterior `businesses/{uid}` la próxima
 
 La implementación está en `backend/lambda`. Consulta su `README.md` para desplegarla con AWS SAM, configurar el correo administrador, Amazon SES, Stripe Checkout y el webhook.
 
-Para que tu usuario sea administrador de plataforma, copia su UID desde Firebase Authentication y agrégalo a `ADMIN_USER_IDS` en la Lambda. Al volver a iniciar sesión se asignará el custom claim `admin` y entrarás directamente a `/admin`. Una cuenta de plataforma no mantiene libretas propias ni aparece como miembro de las libretas que supervisa.
+Para que tu usuario sea administrador de plataforma, copia su UID desde Firebase Authentication y agrégalo a `ADMIN_USER_IDS` en la Lambda. Al volver a iniciar sesión se asignará el custom claim `admin` y entrarás directamente a `/admin`. Una cuenta de plataforma no abre ninguna libreta como propia ni necesita formar parte de las que supervisa.
 
 ## Validación
 

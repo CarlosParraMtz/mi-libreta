@@ -195,7 +195,7 @@ async function createInvitation(user: DecodedIdToken, payload: Record<string, un
 
   try {
     const invited = await firebaseAuth.getUserByEmail(email)
-    if (adminUserIds.has(invited.uid) || invited.customClaims?.admin === true) throw httpError(400, 'Un administrador de plataforma no se agrega a libretas particulares.')
+    if (adminUserIds.has(invited.uid) || invited.customClaims?.admin === true || Boolean(invited.email && adminEmails.has(invited.email.toLowerCase()))) throw httpError(400, 'Un administrador de plataforma no se agrega a libretas particulares.')
     if ((business.adminIds || []).includes(invited.uid)) return { status: 'accepted', message: 'La persona ya administra esta libreta.' }
     const addedAt = new Date().toISOString()
     await firestore.runTransaction(async (transaction) => {
