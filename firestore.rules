@@ -25,16 +25,34 @@ service cloud.firestore {
       );
     }
 
+    function businessHasAccess(businessId) {
+      let subscription = businessData(businessId).get('subscription', {});
+      return subscription.get('accessOverride', null) != 'suspended' && (
+        subscription.get('trialEndsAtMs', 0) > request.time.toMillis() ||
+        subscription.get('currentPeriodEndMs', 0) > request.time.toMillis() ||
+        (subscription.get('stripeSubscriptionId', '') != '' && subscription.get('status', 'none') in ['active', 'trialing', 'past_due'])
+      );
+    }
+
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
-      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId && !request.resource.data.keys().hasAny(['platformAdmin', 'businessIds']);
+      allow update: if signedIn() && request.auth.uid == userId
+        && request.resource.data.get('platformAdmin', false) == resource.data.get('platformAdmin', false)
+        && request.resource.data.get('businessIds', []) == resource.data.get('businessIds', [])
+        && (!request.resource.data.keys().hasAny(['defaultBusinessId']) || request.resource.data.defaultBusinessId in resource.data.get('businessIds', []));
       allow delete: if platformAdmin();
     }
 
     match /businesses/{businessId} {
       allow read: if businessMember(businessId) || platformAdmin();
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if businessAdmin(businessId) || platformAdmin();
+      allow create: if false;
+      allow update: if platformAdmin() || (businessAdmin(businessId) && businessHasAccess(businessId)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.adminIds == resource.data.adminIds
+        && request.resource.data.memberIds == resource.data.memberIds
+        && request.resource.data.get('administrators', []) == resource.data.get('administrators', [])
+        && request.resource.data.get('subscription', {}) == resource.data.get('subscription', {}));
       allow delete: if platformAdmin() || (signedIn() && request.auth.uid == resource.data.ownerId);
     }
 

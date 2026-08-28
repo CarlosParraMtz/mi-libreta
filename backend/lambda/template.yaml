@@ -17,6 +17,7 @@ Resources:
           - GET
           - POST
           - PATCH
+          - DELETE
           - OPTIONS
 
   MiLibretaFunction:
@@ -30,6 +31,7 @@ Resources:
       Environment:
         Variables:
           APP_URL: !Ref AppOrigin
+          ADMIN_USER_IDS: !Ref AdminUserIds
           ADMIN_EMAILS: !Ref AdminEmails
           FIREBASE_SERVICE_ACCOUNT_JSON: !Ref FirebaseServiceAccountJson
           STRIPE_SECRET_KEY: !Ref StripeSecretKey
@@ -56,7 +58,12 @@ Parameters:
     Default: https://milibreta.web.app
   AdminEmails:
     Type: String
-    Description: Correos separados por coma que recibirán el rol admin de plataforma
+    Default: ''
+    Description: Compatibilidad temporal; se recomienda usar AdminUserIds
+  AdminUserIds:
+    Type: String
+    Default: ''
+    Description: UIDs de Firebase separados por coma que recibirán el rol admin de plataforma
   FirebaseServiceAccountJson:
     Type: String
     NoEcho: true

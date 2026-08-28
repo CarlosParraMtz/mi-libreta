@@ -78,6 +78,11 @@ export function FirebaseSync() {
     const timer = window.setTimeout(() => {
       const data: Partial<LedgerData> = { ...ledger }
       delete data.id
+      delete data.ownerId
+      delete data.adminIds
+      delete data.memberIds
+      delete data.administrators
+      delete data.subscription
       void setDoc(doc(firestore, 'businesses', businessId), { ...data, updatedAt: new Date().toISOString() }, { merge: true })
     }, 450)
     return () => window.clearTimeout(timer)

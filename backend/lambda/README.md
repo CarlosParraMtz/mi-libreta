@@ -13,7 +13,8 @@ Una sola Lambda atiende:
 ## Variables requeridas
 
 - `APP_URL`: URL pública del frontend. Para producción usa `https://milibreta.web.app`.
-- `ADMIN_EMAILS`: correos de administradores de plataforma separados por coma. Agrega aquí tu correo.
+- `ADMIN_USER_IDS`: UIDs de Firebase Authentication de los administradores de plataforma, separados por coma. Esta es la opción recomendada.
+- `ADMIN_EMAILS`: compatibilidad temporal con la configuración anterior; puede dejarse vacío.
 - `FIREBASE_SERVICE_ACCOUNT_JSON`: JSON completo de una cuenta de servicio de Firebase.
 - `STRIPE_SECRET_KEY`: clave secreta de Stripe.
 - `STRIPE_WEBHOOK_SECRET`: secreto del endpoint webhook.
@@ -35,6 +36,14 @@ Después del despliegue:
 2. En Stripe crea un webhook hacia `ApiUrl/stripe/webhook`.
 3. Suscribe los eventos `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` y `customer.subscription.deleted`.
 4. Copia el signing secret resultante a `STRIPE_WEBHOOK_SECRET` y vuelve a desplegar.
-5. Cierra sesión e inicia nuevamente con un correo incluido en `ADMIN_EMAILS`; la Lambda asignará el custom claim `admin`.
+5. Copia tu UID desde **Firebase Authentication → Users**, vuelve a desplegar con ese valor en `AdminUserIds`, cierra sesión e inicia nuevamente. La Lambda asignará el custom claim `admin` y te llevará directamente a `/admin`.
+
+## Modelo de libretas y pruebas
+
+- Un usuario puede ser propietario o administrador de varias libretas.
+- Una invitación agrega acceso exclusivamente a la libreta que la originó.
+- Cada libreta tiene su propio cliente y suscripción de Stripe.
+- Al crearla, la Lambda fija una prueba gratuita de 30 días que el navegador no puede modificar.
+- Si el usuario configura Stripe durante la prueba, Checkout conserva únicamente los días restantes; no concede una segunda prueba.
 
 No publiques el JSON de Firebase ni las claves de Stripe en el repositorio.

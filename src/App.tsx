@@ -44,6 +44,7 @@ function App() {
           </Route>
           <Route element={<RequireAuth ignoreOnboarding />}>
             <Route path="/aceptar-invitacion" element={<AcceptInvitation />} />
+            <Route path="/nueva-libreta" element={<Onboarding />} />
             <Route element={<AdminGate />}>
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/libretas/:id" element={<AdminBusiness />} />

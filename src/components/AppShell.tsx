@@ -24,7 +24,8 @@ export function AppShell() {
       <div className="mx-auto min-h-screen max-w-[1180px] md:grid md:grid-cols-[230px_1fr]">
         <aside className="sticky top-0 hidden h-screen border-r border-ink/8 px-5 py-7 md:flex md:flex-col">
           <NavLink to="/dashboard" className="px-3 text-2xl font-black tracking-tight"><span className="text-coral">Mi</span> Libreta</NavLink>
-          <p className="mt-1 truncate px-3 text-xs font-semibold text-ink/40">{ledger.businessName}</p>
+          <p className="mt-1 truncate px-3 text-xs font-black text-ink/50">{ledger.ledgerName}</p>
+          {ledger.ledgerName !== ledger.businessName && <p className="truncate px-3 text-[10px] font-semibold text-ink/30">{ledger.businessName}</p>}
           <BusinessSwitcher />
           <nav className="mt-10 space-y-2">
             {visibleLinks.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} className={navClass}><Icon size={20} /><span>{label}</span></NavLink>)}

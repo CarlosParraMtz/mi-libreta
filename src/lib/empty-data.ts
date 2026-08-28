@@ -1,9 +1,11 @@
 import type { LedgerData } from './types'
 
 export const emptyLedger: LedgerData = {
+  ledgerName: '',
   ownerId: '',
   adminIds: [],
   memberIds: [],
+  administrators: [],
   businessName: '',
   ownerName: '',
   businessType: '',
@@ -22,8 +24,10 @@ export const normalizeLedger = (value: Partial<LedgerData>, id?: string): Ledger
   ...emptyLedger,
   ...value,
   id: id ?? value.id,
+  ledgerName: value.ledgerName || value.businessName || '',
   adminIds: value.adminIds ?? (value.ownerId ? [value.ownerId] : []),
   memberIds: value.memberIds ?? (value.ownerId ? [value.ownerId] : []),
+  administrators: value.administrators ?? [],
   enabledModules: value.enabledModules ?? [],
   subscription: { ...emptyLedger.subscription, ...(value.subscription ?? {}) },
   customers: value.customers ?? [],

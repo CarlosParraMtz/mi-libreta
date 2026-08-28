@@ -70,7 +70,7 @@ export const prepareRegistrationAtom = atom(null, (_get, set, ownerName: string)
   set(ledgerAtom, { ...emptyLedger, ownerName: ownerName || 'Dueño', enabledModules: ['credits'] })
 })
 
-export const updateBusinessAtom = atom(null, (get, set, payload: { businessName: string; ownerName: string; businessType: string; phone: string; enabledModules: ProductModule[]; onboardingComplete?: boolean }) => {
+export const updateBusinessAtom = atom(null, (get, set, payload: { ledgerName: string; businessName: string; ownerName: string; businessType: string; phone: string; enabledModules: ProductModule[]; onboardingComplete?: boolean }) => {
   const current = get(ledgerAtom)
   set(ledgerAtom, { ...current, ...payload, onboardingComplete: payload.onboardingComplete ?? current.onboardingComplete })
 })

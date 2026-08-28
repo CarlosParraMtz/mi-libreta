@@ -5,12 +5,24 @@ export type SubscriptionStatus = 'none' | 'incomplete' | 'incomplete_expired' | 
 
 export interface SubscriptionInfo {
   status: SubscriptionStatus
+  trialStartedAt?: string
+  trialEndsAt?: string
+  trialEndsAtMs?: number
   stripeCustomerId?: string
   stripeSubscriptionId?: string
   stripePriceId?: string
   currentPeriodEnd?: string
+  currentPeriodEndMs?: number
   cancelAtPeriodEnd?: boolean
   accessOverride?: 'active' | 'suspended' | null
+}
+
+export interface BusinessAdministrator {
+  uid: string
+  email: string
+  displayName?: string
+  role: 'owner' | 'admin'
+  addedAt: string
 }
 
 export interface Customer {
@@ -70,9 +82,11 @@ export interface CashMovement {
 
 export interface LedgerData {
   id?: string
+  ledgerName: string
   ownerId: string
   adminIds: string[]
   memberIds: string[]
+  administrators: BusinessAdministrator[]
   businessName: string
   ownerName: string
   businessType: string

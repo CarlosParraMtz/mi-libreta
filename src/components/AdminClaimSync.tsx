@@ -1,8 +1,8 @@
 import { onAuthStateChanged } from 'firebase/auth'
 import { useSetAtom } from 'jotai'
 import { useEffect } from 'react'
-import { apiBaseUrl, apiRequest } from '../lib/api'
 import { auth } from '../lib/firebase'
+import { syncSession } from '../lib/session-routing'
 import { adminClaimStatusAtom, isPlatformAdminAtom } from '../state/store'
 
 export function AdminClaimSync() {
@@ -13,12 +13,8 @@ export function AdminClaimSync() {
     return onAuthStateChanged(auth, async (user) => {
       if (!user) { setIsAdmin(false); setStatus('ready'); return }
       setStatus('loading')
-      if (apiBaseUrl) {
-        await apiRequest('/auth/sync-profile', { method: 'POST' }).catch(() => null)
-        await apiRequest('/auth/sync-admin', { method: 'POST' }).catch(() => null)
-      }
-      const token = await user.getIdTokenResult(true)
-      setIsAdmin(token.claims.admin === true)
+      const { isAdmin } = await syncSession(user).catch(() => ({ isAdmin: false }))
+      setIsAdmin(isAdmin)
       setStatus('ready')
     })
   }, [setIsAdmin, setStatus])

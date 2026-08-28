@@ -30,9 +30,9 @@ Las rutas de React Router se resuelven mediante el rewrite de Hosting hacia `ind
 4. Publica `firestore.rules`.
 5. Crea una cuenta de servicio para la Lambda y guarda su JSON únicamente como secreto de AWS.
 
-Cada usuario tiene un perfil en `users/{uid}`. El campo `defaultBusinessId` señala la libreta activa y cada documento `businesses/{businessId}` contiene miembros, administradores, configuración, movimientos y estado de Stripe.
+Cada usuario tiene un perfil en `users/{uid}`. El campo `defaultBusinessId` señala la libreta activa y `businessIds` contiene únicamente las libretas que puede ver. Cada documento `businesses/{businessId}` tiene nombre, administradores propios, configuración, movimientos, 30 días de prueba y una suscripción de Stripe independiente.
 
-Una cuenta puede administrar varias libretas y cambiar la activa desde el selector del dashboard. El panel de plataforma también permite abrir cualquier libreta “como soporte” para trabajar directamente con sus clientes, pedidos, fiados, apartados y caja.
+Una cuenta puede administrar varias libretas y cambiar la activa desde el selector del dashboard. El panel de plataforma puede inspeccionar y configurar cualquier libreta sin agregar al administrador de plataforma como miembro ni mezclar sus datos con los de los usuarios.
 
 La API migra automáticamente el formato anterior `businesses/{uid}` la próxima vez que el usuario inicie sesión.
 
@@ -40,7 +40,7 @@ La API migra automáticamente el formato anterior `businesses/{uid}` la próxima
 
 La implementación está en `backend/lambda`. Consulta su `README.md` para desplegarla con AWS SAM, configurar el correo administrador, Amazon SES, Stripe Checkout y el webhook.
 
-Para que tu usuario sea administrador de plataforma, agrega el correo exacto con el que entras a Firebase en la variable `ADMIN_EMAILS` de la Lambda. Al volver a iniciar sesión se asignará el custom claim `admin` y aparecerá el panel `/admin`.
+Para que tu usuario sea administrador de plataforma, copia su UID desde Firebase Authentication y agrégalo a `ADMIN_USER_IDS` en la Lambda. Al volver a iniciar sesión se asignará el custom claim `admin` y entrarás directamente a `/admin`. Una cuenta de plataforma no mantiene libretas propias ni aparece como miembro de las libretas que supervisa.
 
 ## Validación
 

@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthLayout, authInputClass } from '../components/AuthLayout'
 import { authErrorMessage } from '../lib/auth-errors'
 import { auth, isFirebaseConfigured } from '../lib/firebase'
+import { signedInDestination } from '../lib/session-routing'
 import { prepareRegistrationAtom } from '../state/store'
 
 export function Login() {
@@ -22,7 +23,7 @@ export function Login() {
       return
     }
     return onAuthStateChanged(auth, (user) => {
-      if (user) navigate(returnTo, { replace: true })
+      if (user) void signedInDestination(user, returnTo).then((destination) => navigate(destination, { replace: true })).catch(() => setCheckingSession(false))
       else setCheckingSession(false)
     })
   }, [navigate, returnTo])
@@ -31,13 +32,13 @@ export function Login() {
     event.preventDefault(); setLoading(true); setError('')
     const form = new FormData(event.currentTarget)
     if (!auth) { setError('Configura Firebase para iniciar sesión.'); setLoading(false); return }
-    try { await signInWithEmailAndPassword(auth, String(form.get('email')), String(form.get('password'))); navigate(returnTo) } catch (issue) { setError(authErrorMessage(issue)); setLoading(false) }
+    try { await signInWithEmailAndPassword(auth, String(form.get('email')), String(form.get('password'))) } catch (issue) { setError(authErrorMessage(issue)); setLoading(false) }
   }
 
   const google = async () => {
     setLoading(true); setError('')
     if (!auth) { setError('Configura Firebase para iniciar sesión.'); setLoading(false); return }
-    try { const result = await signInWithPopup(auth, new GoogleAuthProvider()); const isNew = getAdditionalUserInfo(result)?.isNewUser; if (isNew) prepare(result.user.displayName || 'Dueño'); navigate(returnTo !== '/dashboard' ? returnTo : isNew ? '/onboarding' : '/dashboard') } catch (issue) { setError(authErrorMessage(issue)); setLoading(false) }
+    try { const result = await signInWithPopup(auth, new GoogleAuthProvider()); if (getAdditionalUserInfo(result)?.isNewUser) prepare(result.user.displayName || 'Dueño') } catch (issue) { setError(authErrorMessage(issue)); setLoading(false) }
   }
 
   if (checkingSession) return <div className="grid min-h-screen place-items-center bg-cream font-black text-ink/40">Revisando tu sesión…</div>
