@@ -11,6 +11,8 @@ npm run dev
 
 Copia `.env.example` como `.env.local` y configura Firebase y `VITE_API_BASE_URL`.
 
+Antes de publicar las páginas legales, completa también `VITE_LEGAL_RESPONSIBLE_NAME`, `VITE_LEGAL_ADDRESS`, `VITE_LEGAL_PRIVACY_EMAIL`, `VITE_LEGAL_SUPPORT_EMAIL`, `VITE_LEGAL_PHONE`, `VITE_LEGAL_TAX_ID`, `VITE_LEGAL_JURISDICTION` y `VITE_LEGAL_EFFECTIVE_DATE`. Estos datos se muestran en el aviso de privacidad, términos y política de pagos.
+
 ## Publicación del frontend
 
 El target de Firebase Hosting está configurado para `https://milibreta.web.app`.

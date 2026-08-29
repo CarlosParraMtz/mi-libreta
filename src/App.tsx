@@ -17,6 +17,10 @@ import { Orders } from './pages/Orders'
 import { AcceptInvitation } from './pages/AcceptInvitation'
 import { Admin } from './pages/Admin'
 import { AdminBusiness } from './pages/AdminBusiness'
+import { Cookies } from './pages/Cookies'
+import { Payments } from './pages/Payments'
+import { Privacy } from './pages/Privacy'
+import { Terms } from './pages/Terms'
 import './App.css'
 
 const FirebaseSync = lazy(() => import('./components/FirebaseSync').then((module) => ({ default: module.FirebaseSync })))
@@ -39,6 +43,10 @@ function App() {
           <Route path="/entrar" element={<Login />} />
           <Route path="/registro" element={<Register />} />
           <Route path="/recuperar-contrasena" element={<ForgotPassword />} />
+          <Route path="/aviso-de-privacidad" element={<Privacy />} />
+          <Route path="/terminos" element={<Terms />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/pagos-y-cancelaciones" element={<Payments />} />
           <Route element={<RequireAuth requireOnboarding />}>
             <Route path="/onboarding" element={<Onboarding />} />
           </Route>

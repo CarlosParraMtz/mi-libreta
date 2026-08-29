@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, BellRing, BookOpen, Check, Cloud, MessageCircle, PackageCheck, ShieldCheck, ShoppingBag, Smartphone, Users, WalletCards } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { legalLinks } from '../lib/legal'
 
 const products = [
   { icon: BookOpen, title: 'Fiados', text: 'Sabe quién te debe, cuánto y desde cuándo. Cobra por WhatsApp en un toque.', color: 'bg-sky' },
@@ -56,7 +57,7 @@ export function Landing() {
           ['¿Tengo que usar todo?', 'No. Durante el registro eliges Fiados, Apartados, Caja o Pedidos y puedes cambiarlo después.'],
         ].map(([question, answer]) => <article key={question} className="rounded-[1.7rem] bg-cream p-6"><h3 className="font-black">{question}</h3><p className="mt-2 text-sm font-semibold leading-relaxed text-ink/50">{answer}</p></article>)}</div></div></section>
       </main>
-      <footer className="bg-ink px-5 py-10 text-white sm:px-8"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-5 sm:flex-row"><Link to="/" className="text-2xl font-black"><span className="text-coral">Mi</span> Libreta</Link><p className="text-sm font-semibold text-white/35">Tu negocio, bien apuntado.</p><div className="flex gap-5 text-sm font-bold text-white/55"><Link to="/iniciar-sesion">Entrar</Link><Link to="/registro">Crear cuenta</Link></div></div></footer>
+      <footer className="bg-ink px-5 py-10 text-white sm:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-6"><div className="flex flex-col items-center justify-between gap-5 sm:flex-row"><Link to="/" className="text-2xl font-black"><span className="text-coral">Mi</span> Libreta</Link><p className="text-sm font-semibold text-white/35">Tu negocio, bien apuntado.</p><div className="flex gap-5 text-sm font-bold text-white/55"><Link to="/iniciar-sesion">Entrar</Link><Link to="/registro">Crear cuenta</Link></div></div><div className="flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/10 pt-5 text-xs font-bold text-white/40 sm:justify-start">{legalLinks.map((item) => <Link key={item.to} to={item.to} className="hover:text-white">{item.label}</Link>)}</div></div></footer>
     </div>
   )
 }
