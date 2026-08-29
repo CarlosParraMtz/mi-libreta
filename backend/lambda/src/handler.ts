@@ -6,9 +6,24 @@ import { type DecodedIdToken, getAuth } from 'firebase-admin/auth'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import Stripe from 'stripe'
 
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON.replace(/\\n/g, '\n'))
-  : null
+function parseServiceAccount(value?: string) {
+  if (!value) return null
+  const candidates = [value, Buffer.from(value, 'base64').toString('utf8')]
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.private_key === 'string') parsed.private_key = parsed.private_key.replace(/\\n/g, '\n')
+        return parsed
+      }
+    } catch {
+      // Try the next supported representation.
+    }
+  }
+  throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON debe contener JSON o JSON codificado en Base64.')
+}
+
+const serviceAccount = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
 
 if (!getApps().length) initializeApp({ credential: serviceAccount ? cert(serviceAccount) : applicationDefault() })
 
