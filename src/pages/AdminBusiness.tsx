@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { authInputClass } from '../components/AuthLayout'
 import { apiRequest } from '../lib/api'
+import { normalizeLedger } from '../lib/empty-data'
 import { moduleOptions } from '../lib/modules'
 import type { LedgerData, ProductModule } from '../lib/types'
 
@@ -12,11 +13,11 @@ export function AdminBusiness() {
   const [modules, setModules] = useState<ProductModule[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const load = () => { setLoading(true); void apiRequest<{ business: LedgerData }>(`/admin/businesses/${id}`).then((result) => { setBusiness(result.business); setModules(result.business.enabledModules || []) }).catch((issue) => setError(issue instanceof Error ? issue.message : 'No pudimos cargar la libreta.')).finally(() => setLoading(false)) }
+  const load = () => { setLoading(true); void apiRequest<{ business: LedgerData }>(`/admin/businesses/${id}`).then((result) => { const normalized = normalizeLedger(result.business, id); setBusiness(normalized); setModules(normalized.enabledModules) }).catch((issue) => setError(issue instanceof Error ? issue.message : 'No pudimos cargar la libreta.')).finally(() => setLoading(false)) }
   useEffect(() => {
     let active = true
     void apiRequest<{ business: LedgerData }>(`/admin/businesses/${id}`)
-      .then((result) => { if (active) { setBusiness(result.business); setModules(result.business.enabledModules || []) } })
+      .then((result) => { if (active) { const normalized = normalizeLedger(result.business, id); setBusiness(normalized); setModules(normalized.enabledModules) } })
       .catch((issue) => { if (active) setError(issue instanceof Error ? issue.message : 'No pudimos cargar la libreta.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }

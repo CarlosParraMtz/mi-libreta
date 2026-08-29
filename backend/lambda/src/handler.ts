@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses'
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app'
 import { type DecodedIdToken, getAuth } from 'firebase-admin/auth'
-import { FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { type DocumentData, FieldValue, getFirestore } from 'firebase-admin/firestore'
 import Stripe from 'stripe'
 
 function parseServiceAccount(value?: string) {
@@ -32,6 +32,7 @@ const firebaseAuth = getAuth()
 const stripe = new Stripe(requiredEnv('STRIPE_SECRET_KEY'))
 const ses = new SESClient({})
 const appUrl = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '')
+const allowedOrigins = new Set([appUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'])
 const adminUserIds = new Set((process.env.ADMIN_USER_IDS || '').split(',').map((uid) => uid.trim()).filter(Boolean))
 const adminEmails = new Set((process.env.ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
 
@@ -354,11 +355,27 @@ async function listBusinesses(user: DecodedIdToken) {
   return { businesses: query.docs.map((item) => { const data = item.data(); return { id: item.id, ledgerName: data.ledgerName || data.businessName, businessName: data.businessName, ownerName: data.ownerName, businessType: data.businessType, createdAt: data.createdAt, subscription: data.subscription || { status: 'none' }, counts: { customers: data.customers?.length || 0, orders: data.orders?.length || 0, credits: data.credits?.length || 0, layaways: data.layaways?.length || 0 } } }) }
 }
 
+function normalizeBusinessForAdmin(id: string, data: DocumentData) {
+  return {
+    ...data,
+    id,
+    ledgerName: data.ledgerName || data.businessName || 'Mi libreta',
+    administrators: Array.isArray(data.administrators) ? data.administrators : [],
+    enabledModules: Array.isArray(data.enabledModules) ? data.enabledModules : [],
+    subscription: data.subscription || { status: 'none', accessOverride: null },
+    customers: Array.isArray(data.customers) ? data.customers : [],
+    orders: Array.isArray(data.orders) ? data.orders : [],
+    credits: Array.isArray(data.credits) ? data.credits : [],
+    layaways: Array.isArray(data.layaways) ? data.layaways : [],
+    cash: Array.isArray(data.cash) ? data.cash : [],
+  }
+}
+
 async function getBusiness(user: DecodedIdToken, businessId: string) {
   await requirePlatformAdmin(user)
   const snapshot = await firestore.doc(`businesses/${businessId}`).get()
   if (!snapshot.exists) throw httpError(404, 'La libreta no existe.')
-  return { business: { id: snapshot.id, ...snapshot.data() } }
+  return { business: normalizeBusinessForAdmin(snapshot.id, snapshot.data()!) }
 }
 
 async function patchBusiness(user: DecodedIdToken, businessId: string, payload: Record<string, unknown>) {
@@ -386,7 +403,8 @@ async function manageSubscription(user: DecodedIdToken, businessId: string, payl
 }
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> {
-  const origin = event.headers.origin && event.headers.origin === appUrl ? event.headers.origin : appUrl
+  const requestedOrigin = event.headers.origin
+  const origin = requestedOrigin && allowedOrigins.has(requestedOrigin) ? requestedOrigin : appUrl
   if (event.requestContext.http.method === 'OPTIONS') return response(204, {}, origin)
   try {
     const path = event.rawPath
