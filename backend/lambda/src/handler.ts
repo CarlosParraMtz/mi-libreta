@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { SendEmailCommand, SESClient } from '@aws-sdk/client-ses'
 import { applicationDefault, cert, getApps, initializeApp } from 'firebase-admin/app'
 import { type DecodedIdToken, getAuth } from 'firebase-admin/auth'
-import { type DocumentData, FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { type DocumentData, FieldValue, getFirestore, type QuerySnapshot } from 'firebase-admin/firestore'
 import Stripe from 'stripe'
 
 function parseServiceAccount(value?: string) {
@@ -35,6 +35,7 @@ const appUrl = (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '
 const allowedOrigins = new Set([appUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'])
 const adminUserIds = new Set((process.env.ADMIN_USER_IDS || '').split(',').map((uid) => uid.trim()).filter(Boolean))
 const adminEmails = new Set((process.env.ADMIN_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
+const freeLedgerLimit = 2
 
 function requiredEnv(name: string) {
   const value = process.env[name]
@@ -166,6 +167,25 @@ async function syncLegacyProfile(user: DecodedIdToken) {
   return { migrated: true, businessId: user.uid }
 }
 
+function summarizeBusinessCreation(snapshot: QuerySnapshot<DocumentData>) {
+  const hasActiveSubscription = snapshot.docs.some((document) => {
+    const subscription = document.data().subscription || {}
+    return Boolean(subscription.stripeSubscriptionId) && subscription.status === 'active'
+  })
+  return {
+    allowed: snapshot.size < freeLedgerLimit || hasActiveSubscription,
+    ownedCount: snapshot.size,
+    freeLimit: freeLedgerLimit,
+    hasActiveSubscription,
+  }
+}
+
+async function businessCreationEligibility(user: DecodedIdToken) {
+  if (isPlatformAdmin(user)) return { allowed: false, ownedCount: 0, freeLimit: freeLedgerLimit, hasActiveSubscription: false }
+  const owned = await firestore.collection('businesses').where('ownerId', '==', user.uid).get()
+  return summarizeBusinessCreation(owned)
+}
+
 async function createBusiness(user: DecodedIdToken, payload: Record<string, unknown>) {
   if (isPlatformAdmin(user)) throw httpError(403, 'Los administradores de plataforma no crean libretas propias.')
   const ledgerName = String(payload.ledgerName || '').trim()
@@ -180,6 +200,8 @@ async function createBusiness(user: DecodedIdToken, payload: Record<string, unkn
   const nowIso = now.toISOString()
   const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
   const businessRef = firestore.collection('businesses').doc()
+  const userRef = firestore.doc(`users/${user.uid}`)
+  const ownedBusinesses = firestore.collection('businesses').where('ownerId', '==', user.uid)
   const business = {
     ledgerName, businessName, ownerName, businessType, phone, enabledModules,
     ownerId: user.uid,
@@ -192,12 +214,16 @@ async function createBusiness(user: DecodedIdToken, payload: Record<string, unkn
     createdAt: nowIso, updatedAt: nowIso,
   }
   await firestore.runTransaction(async (transaction) => {
+    const profile = await transaction.get(userRef)
+    const owned = await transaction.get(ownedBusinesses)
+    const eligibility = summarizeBusinessCreation(owned)
+    if (!eligibility.allowed) throw httpError(409, `Ya tienes ${freeLedgerLimit} libretas con prueba gratuita. Activa la suscripción de una de tus libretas para poder crear más.`)
     transaction.create(businessRef, business)
-    transaction.set(firestore.doc(`users/${user.uid}`), {
+    transaction.set(userRef, {
       email: user.email || '', displayName: ownerName,
       defaultBusinessId: businessRef.id,
       businessIds: FieldValue.arrayUnion(businessRef.id),
-      createdAt: nowIso, updatedAt: nowIso,
+      createdAt: profile.data()?.createdAt || nowIso, updatedAt: nowIso,
     }, { merge: true })
   })
   return { business: { id: businessRef.id, ...business } }
@@ -421,6 +447,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     const body = parseBody(event) as Record<string, unknown>
     if (path === '/auth/sync-admin' && method === 'POST') return response(200, await syncAdmin(user), origin)
     if (path === '/auth/sync-profile' && method === 'POST') return response(200, await syncLegacyProfile(user), origin)
+    if (path === '/businesses/creation-eligibility' && method === 'GET') return response(200, await businessCreationEligibility(user), origin)
     if (path === '/businesses' && method === 'POST') return response(201, await createBusiness(user, body), origin)
     if (path === '/invitations' && method === 'POST') return response(200, await createInvitation(user, body), origin)
     if (path === '/invitations/accept' && method === 'POST') return response(200, await acceptInvitation(user, body), origin)

@@ -8,6 +8,7 @@ Una sola Lambda atiende:
 - correos de invitación con Amazon SES;
 - listado y configuración de libretas desde el panel administrativo;
 - permisos administrativos de acceso por libreta: ilimitado, hasta una fecha, suspendido o según la suscripción;
+- límite transaccional de dos libretas propias en prueba, desbloqueado cuando alguna suscripción de Stripe está activa;
 - Stripe Checkout, Customer Portal y webhook;
 - suspensión, restauración y cancelación programada de suscripciones.
 

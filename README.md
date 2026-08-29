@@ -32,6 +32,8 @@ Las rutas de React Router se resuelven mediante el rewrite de Hosting hacia `ind
 
 Cada usuario tiene un perfil en `users/{uid}`. El campo `defaultBusinessId` señala la libreta activa y `businessIds` contiene únicamente las libretas que puede ver. Cada documento `businesses/{businessId}` tiene nombre, administradores propios, configuración, movimientos, 30 días de prueba y una suscripción de Stripe independiente.
 
+Un usuario puede crear como máximo dos libretas propias mientras ninguna tenga una suscripción de Stripe con estado `active`. En cuanto al menos una suscripción propia está activa puede crear más. Las libretas compartidas mediante invitación no consumen este límite.
+
 Una cuenta puede administrar varias libretas y cambiar la activa desde el selector del dashboard. El panel de plataforma puede inspeccionar y configurar cualquier libreta sin agregar al administrador de plataforma como miembro ni mezclar sus datos con los de los usuarios.
 
 Desde ese panel, el administrador de plataforma puede conceder acceso ilimitado, fijar una fecha límite, suspender el acceso o devolver la libreta al control normal de su prueba y suscripción. Estos permisos se aplican también en las reglas de Firestore y cada libreta conserva su estado independiente en Stripe.
