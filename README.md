@@ -34,6 +34,8 @@ Cada usuario tiene un perfil en `users/{uid}`. El campo `defaultBusinessId` señ
 
 Una cuenta puede administrar varias libretas y cambiar la activa desde el selector del dashboard. El panel de plataforma puede inspeccionar y configurar cualquier libreta sin agregar al administrador de plataforma como miembro ni mezclar sus datos con los de los usuarios.
 
+Desde ese panel, el administrador de plataforma puede conceder acceso ilimitado, fijar una fecha límite, suspender el acceso o devolver la libreta al control normal de su prueba y suscripción. Estos permisos se aplican también en las reglas de Firestore y cada libreta conserva su estado independiente en Stripe.
+
 La API migra automáticamente el formato anterior `businesses/{uid}` la próxima vez que el usuario inicie sesión.
 
 ## AWS Lambda y Stripe

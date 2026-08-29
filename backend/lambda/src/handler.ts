@@ -394,8 +394,15 @@ async function manageSubscription(user: DecodedIdToken, businessId: string, payl
   const data = snapshot.data()!
   const action = String(payload.action || '')
   const subscriptionId = data.subscription?.stripeSubscriptionId as string | undefined
-  if (action === 'suspend') await ref.set({ subscription: { ...(data.subscription || {}), accessOverride: 'suspended' } }, { merge: true })
-  else if (action === 'restore') await ref.set({ subscription: { ...(data.subscription || {}), accessOverride: null } }, { merge: true })
+  const updatedAt = new Date().toISOString()
+  if (action === 'suspend') await ref.update({ 'subscription.accessOverride': 'suspended', updatedAt })
+  else if (action === 'restore') await ref.update({ 'subscription.accessOverride': null, 'subscription.accessUntil': FieldValue.delete(), 'subscription.accessUntilMs': FieldValue.delete(), updatedAt })
+  else if (action === 'grant-unlimited') await ref.update({ 'subscription.accessOverride': 'unlimited', 'subscription.accessUntil': FieldValue.delete(), 'subscription.accessUntilMs': FieldValue.delete(), updatedAt })
+  else if (action === 'grant-until') {
+    const accessUntil = new Date(String(payload.accessUntil || ''))
+    if (!Number.isFinite(accessUntil.getTime()) || accessUntil.getTime() <= Date.now()) throw httpError(400, 'Elige una fecha límite futura.')
+    await ref.update({ 'subscription.accessOverride': 'until', 'subscription.accessUntil': accessUntil.toISOString(), 'subscription.accessUntilMs': accessUntil.getTime(), updatedAt })
+  }
   else if (action === 'cancel' && subscriptionId) await stripe.subscriptions.update(subscriptionId, { cancel_at_period_end: true })
   else if (action === 'resume' && subscriptionId) await stripe.subscriptions.update(subscriptionId, { cancel_at_period_end: false })
   else throw httpError(400, 'La acción no es válida para esta suscripción.')

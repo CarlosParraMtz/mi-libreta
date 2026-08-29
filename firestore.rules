@@ -27,10 +27,15 @@ service cloud.firestore {
 
     function businessHasAccess(businessId) {
       let subscription = businessData(businessId).get('subscription', {});
-      return subscription.get('accessOverride', null) != 'suspended' && (
-        subscription.get('trialEndsAtMs', 0) > request.time.toMillis() ||
-        subscription.get('currentPeriodEndMs', 0) > request.time.toMillis() ||
-        (subscription.get('stripeSubscriptionId', '') != '' && subscription.get('status', 'none') in ['active', 'trialing', 'past_due'])
+      let accessOverride = subscription.get('accessOverride', null);
+      return accessOverride == 'unlimited' || (
+        accessOverride == 'until'
+          ? subscription.get('accessUntilMs', 0) > request.time.toMillis()
+          : accessOverride != 'suspended' && (
+            subscription.get('trialEndsAtMs', 0) > request.time.toMillis() ||
+            subscription.get('currentPeriodEndMs', 0) > request.time.toMillis() ||
+            (subscription.get('stripeSubscriptionId', '') != '' && subscription.get('status', 'none') in ['active', 'trialing', 'past_due'])
+          )
       );
     }
 

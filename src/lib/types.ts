@@ -14,7 +14,9 @@ export interface SubscriptionInfo {
   currentPeriodEnd?: string
   currentPeriodEndMs?: number
   cancelAtPeriodEnd?: boolean
-  accessOverride?: 'active' | 'suspended' | null
+  accessOverride?: 'active' | 'suspended' | 'unlimited' | 'until' | null
+  accessUntil?: string
+  accessUntilMs?: number
 }
 
 export interface BusinessAdministrator {
