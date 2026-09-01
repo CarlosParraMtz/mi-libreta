@@ -5,12 +5,13 @@ import { useEffect, useRef } from 'react'
 import { emptyLedger, normalizeLedger } from '../lib/empty-data'
 import { auth, db } from '../lib/firebase'
 import type { LedgerData } from '../lib/types'
-import { activeBusinessIdAtom, ledgerAtom, syncStatusAtom } from '../state/store'
+import { activeBusinessIdAtom, ledgerAtom, syncedUserIdAtom, syncStatusAtom } from '../state/store'
 
 export function FirebaseSync() {
   const [ledger, setLedger] = useAtom(ledgerAtom)
   const setBusinessId = useSetAtom(activeBusinessIdAtom)
   const setSyncStatus = useSetAtom(syncStatusAtom)
+  const setSyncedUserId = useSetAtom(syncedUserIdAtom)
   const latestLedger = useRef(ledger)
   const applyingRemote = useRef(false)
   const loadedBusinessId = useRef<string | null>(null)
@@ -25,6 +26,7 @@ export function FirebaseSync() {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       unsubscribeProfile?.(); unsubscribeBusiness?.()
       loadedBusinessId.current = null
+      setSyncedUserId(null)
       if (!user) {
         applyingRemote.current = true
         setLedger(emptyLedger)
@@ -42,6 +44,7 @@ export function FirebaseSync() {
           applyingRemote.current = true
           setLedger({ ...emptyLedger, ownerName: user.displayName || '', onboardingComplete: false })
           setBusinessId(null)
+          setSyncedUserId(user.uid)
           setSyncStatus('ready')
           return
         }
@@ -54,6 +57,8 @@ export function FirebaseSync() {
           if (!businessSnapshot.exists()) {
             applyingRemote.current = true
             setLedger({ ...emptyLedger, ownerName: user.displayName || '', onboardingComplete: false })
+            setBusinessId(null)
+            setSyncedUserId(user.uid)
             setSyncStatus('ready')
             return
           }
@@ -62,13 +67,14 @@ export function FirebaseSync() {
             applyingRemote.current = true
             setLedger(remoteLedger)
           }
+          setSyncedUserId(user.uid)
           setSyncStatus('ready')
         }, () => setSyncStatus('error'))
       }, () => setSyncStatus('error'))
     })
 
     return () => { unsubscribeBusiness?.(); unsubscribeProfile?.(); unsubscribeAuth() }
-  }, [setBusinessId, setLedger, setSyncStatus])
+  }, [setBusinessId, setLedger, setSyncedUserId, setSyncStatus])
 
   useEffect(() => {
     if (applyingRemote.current) { applyingRemote.current = false; return }

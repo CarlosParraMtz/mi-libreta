@@ -1,4 +1,4 @@
-import { Check, CreditCard, LogOut, MailPlus, Plus, Save, Store, UserMinus, Users } from 'lucide-react'
+import { Check, CreditCard, LogOut, MailPlus, Plus, Save, Store, Trash2, UserMinus, Users } from 'lucide-react'
 import { signOut } from 'firebase/auth'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useState, type FormEvent } from 'react'
@@ -27,6 +27,7 @@ export function Settings() {
   const [inviteLoading, setInviteLoading] = useState(false)
   const [inviteUrl, setInviteUrl] = useState('')
   const [billingLoading, setBillingLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const now = useDeadlineClock(ledger.subscription.accessOverride === 'until' ? ledger.subscription.accessUntil : ledger.subscription.trialEndsAt)
 
   const toggle = (id: ProductModule) => setModules((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id])
@@ -64,6 +65,19 @@ export function Settings() {
     } catch (issue) { setError(issue instanceof Error ? issue.message : 'No pudimos quitar al administrador.') }
   }
   const leave = async () => { if (auth) await signOut(auth); navigate('/') }
+  const deleteLedger = async () => {
+    if (!businessId) return
+    const confirmation = window.prompt(`Esta acción es definitiva y cancelará cualquier suscripción. Escribe "${ledger.ledgerName}" para borrar la libreta.`)
+    if (confirmation !== ledger.ledgerName) return
+    setDeleteLoading(true); setError('')
+    try {
+      await apiRequest(`/businesses/${businessId}`, { method: 'DELETE' })
+      window.location.assign('/dashboard')
+    } catch (issue) {
+      setError(issue instanceof Error ? issue.message : 'No pudimos borrar la libreta.')
+      setDeleteLoading(false)
+    }
+  }
   const subscription = ledger.subscription
   const hasStripeCustomer = Boolean(subscription.stripeCustomerId)
   const trialExpired = Boolean(subscription.trialEndsAt && new Date(subscription.trialEndsAt).getTime() <= now && !subscription.stripeSubscriptionId)
@@ -86,6 +100,8 @@ export function Settings() {
     <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-soft sm:p-7"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-sky"><Users size={21} /></span><div><h2 className="text-xl font-black">Administradores de esta libreta</h2><p className="text-sm font-semibold text-ink/40">Sólo tendrán acceso a {ledger.ledgerName}, no a tus demás libretas.</p></div></div>{ledger.administrators.length > 0 && <div className="mt-5 divide-y divide-ink/8 rounded-2xl bg-cream px-4">{ledger.administrators.map((administrator) => <div key={administrator.uid} className="flex items-center gap-3 py-3"><span className="grid size-9 place-items-center rounded-full bg-white font-black">{(administrator.displayName || administrator.email || '?').charAt(0).toUpperCase()}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{administrator.displayName || administrator.email}</p><p className="truncate text-xs font-semibold text-ink/40">{administrator.role === 'owner' ? 'Propietario' : administrator.email}</p></div>{administrator.role !== 'owner' && <button type="button" onClick={() => void removeAdministrator(administrator.uid)} className="grid size-9 place-items-center rounded-full bg-white text-coral" aria-label={`Quitar a ${administrator.email}`}><UserMinus size={16} /></button>}</div>)}</div>}<form onSubmit={invite} className="mt-6 flex flex-col gap-3 sm:flex-row"><input name="email" type="email" className={authInputClass} placeholder="correo@ejemplo.com" required /><button disabled={inviteLoading || !businessId} className="flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-sky px-5 py-3.5 font-black disabled:opacity-50"><MailPlus size={18} /> {inviteLoading ? 'Invitando…' : 'Invitar'}</button></form>{inviteUrl && <div className="mt-4 rounded-2xl bg-cream p-4"><p className="text-xs font-black text-ink/45">SES aún no está configurado. Comparte este enlace:</p><a href={inviteUrl} className="mt-1 block break-all text-sm font-bold text-coral">{inviteUrl}</a></div>}<p className="mt-3 text-xs font-semibold text-ink/35">La persona debe entrar con ese mismo correo. Si ya tiene cuenta, el acceso se agrega inmediatamente.</p></section>
 
     <section className="mt-5 rounded-[2rem] bg-ink p-5 text-white shadow-card sm:p-7"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-2xl bg-lime text-ink"><CreditCard size={21} /></span><div><p className="text-xs font-bold text-white/45">Suscripción de {ledger.ledgerName}</p><h2 className="text-xl font-black">{administrativeAccess || (trialExpired ? 'Prueba vencida' : subscriptionLabels[subscription.status])}</h2>{subscription.trialEndsAt && !subscription.stripeSubscriptionId && <p className="text-xs font-semibold text-white/40">Prueba hasta {new Intl.DateTimeFormat('es-MX').format(new Date(subscription.trialEndsAt))}</p>}{subscription.currentPeriodEnd && <p className="text-xs font-semibold text-white/40">Periodo hasta {new Intl.DateTimeFormat('es-MX').format(new Date(subscription.currentPeriodEnd))}</p>}</div></div><button type="button" disabled={billingLoading || !businessId} onClick={() => billing(hasStripeCustomer ? 'portal' : 'checkout')} className="rounded-2xl bg-lime px-5 py-3.5 font-black text-ink disabled:opacity-50">{billingLoading ? 'Abriendo…' : hasStripeCustomer ? 'Administrar en Stripe' : 'Configurar pago'}</button></div>{subscription.accessOverride === 'suspended' && <p className="mt-4 rounded-xl bg-coral/20 p-3 text-sm font-bold text-peach">El acceso está suspendido por un administrador de la plataforma.</p>}</section>
+
+    {ledger.ownerId === auth?.currentUser?.uid && <section className="mt-5 rounded-[2rem] border border-coral/20 bg-white p-5 shadow-soft sm:p-7"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.16em] text-coral">Zona de peligro</p><h2 className="mt-1 text-xl font-black">Borrar esta libreta</h2><p className="mt-1 text-sm font-semibold text-ink/45">Se eliminarán todos sus datos e invitaciones y se cancelará inmediatamente cualquier suscripción.</p></div><button type="button" disabled={deleteLoading} onClick={() => void deleteLedger()} className="flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-coral px-5 py-3.5 font-black text-white disabled:opacity-50"><Trash2 size={18} /> {deleteLoading ? 'Borrando…' : 'Borrar libreta'}</button></div></section>}
 
     <button type="button" onClick={leave} className="mt-5 flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 font-black text-coral shadow-soft"><LogOut size={18} /> Cerrar sesión</button>
   </div></main>

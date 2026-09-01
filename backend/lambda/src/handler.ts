@@ -305,6 +305,48 @@ async function removeBusinessAdministrator(user: DecodedIdToken, businessId: str
   return { removed: true }
 }
 
+async function deleteBusiness(user: DecodedIdToken, businessId: string) {
+  const snapshot = await firestore.doc(`businesses/${businessId}`).get()
+  if (!snapshot.exists) throw httpError(404, 'La libreta no existe.')
+  const data = snapshot.data()!
+  if (!isPlatformAdmin(user) && data.ownerId !== user.uid) throw httpError(403, 'Sólo el propietario o el administrador de plataforma pueden borrar esta libreta.')
+
+  const subscriptionId = data.subscription?.stripeSubscriptionId as string | undefined
+  let subscriptionCanceled = false
+  if (subscriptionId) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      if (subscription.status !== 'canceled') {
+        await stripe.subscriptions.cancel(subscriptionId, { invoice_now: false, prorate: false })
+        subscriptionCanceled = true
+      }
+    } catch (error) {
+      const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
+      if (code !== 'resource_missing') throw error
+    }
+  }
+
+  const memberIds = Array.from(new Set<string>([data.ownerId, ...(data.memberIds || []), ...(data.adminIds || [])].filter(Boolean)))
+  const [profiles, invitations] = await Promise.all([
+    Promise.all(memberIds.map((uid) => firestore.doc(`users/${uid}`).get())),
+    firestore.collection('businessInvites').where('businessId', '==', businessId).get(),
+  ])
+  const writer = firestore.bulkWriter()
+  const operations: Array<Promise<unknown>> = []
+  for (const profile of profiles) {
+    if (!profile.exists) continue
+    const remainingBusinessIds = ((profile.data()?.businessIds as string[] | undefined) || []).filter((id) => id !== businessId)
+    const updates: Record<string, unknown> = { businessIds: remainingBusinessIds, updatedAt: new Date().toISOString() }
+    if (profile.data()?.defaultBusinessId === businessId) updates.defaultBusinessId = remainingBusinessIds[0] || FieldValue.delete()
+    operations.push(writer.set(profile.ref, updates, { merge: true }))
+  }
+  for (const invitation of invitations.docs) operations.push(writer.delete(invitation.ref))
+  await Promise.all(operations)
+  await writer.close()
+  await snapshot.ref.delete()
+  return { deleted: true, subscriptionCanceled }
+}
+
 async function checkout(user: DecodedIdToken, payload: Record<string, unknown>) {
   const businessId = String(payload.businessId || '')
   const { snapshot, data } = await requireBusinessAdmin(user, businessId)
@@ -449,6 +491,8 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     if (path === '/auth/sync-profile' && method === 'POST') return response(200, await syncLegacyProfile(user), origin)
     if (path === '/businesses/creation-eligibility' && method === 'GET') return response(200, await businessCreationEligibility(user), origin)
     if (path === '/businesses' && method === 'POST') return response(201, await createBusiness(user, body), origin)
+    const businessMatch = path.match(/^\/businesses\/([^/]+)$/)
+    if (businessMatch && method === 'DELETE') return response(200, await deleteBusiness(user, businessMatch[1]), origin)
     if (path === '/invitations' && method === 'POST') return response(200, await createInvitation(user, body), origin)
     if (path === '/invitations/accept' && method === 'POST') return response(200, await acceptInvitation(user, body), origin)
     if (path === '/billing/checkout' && method === 'POST') return response(200, await checkout(user, body), origin)

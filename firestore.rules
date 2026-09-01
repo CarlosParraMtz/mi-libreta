@@ -58,7 +58,8 @@ service cloud.firestore {
         && request.resource.data.memberIds == resource.data.memberIds
         && request.resource.data.get('administrators', []) == resource.data.get('administrators', [])
         && request.resource.data.get('subscription', {}) == resource.data.get('subscription', {}));
-      allow delete: if platformAdmin() || (signedIn() && request.auth.uid == resource.data.ownerId);
+      // Toda eliminación pasa por la Lambda para cancelar Stripe y limpiar referencias.
+      allow delete: if false;
     }
 
     // Las invitaciones sólo se leen y escriben desde la Lambda con Firebase Admin.

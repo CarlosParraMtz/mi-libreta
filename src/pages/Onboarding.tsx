@@ -7,13 +7,14 @@ import { authInputClass } from '../components/AuthLayout'
 import { createBusinessForCurrentUser, getBusinessCreationEligibility, type BusinessCreationEligibility } from '../lib/firebase-repository'
 import { moduleOptions } from '../lib/modules'
 import type { ProductModule } from '../lib/types'
-import { ledgerAtom } from '../state/store'
+import { activeBusinessIdAtom, ledgerAtom } from '../state/store'
 
 const businessTypes = ['Abarrotes y tienda de barrio', 'Ropa, calzado o accesorios', 'Comida y bebidas', 'Estética o servicios', 'Papelería', 'Otro negocio']
 
 export function Onboarding() {
   const current = useAtomValue(ledgerAtom)
   const setLedger = useSetAtom(ledgerAtom)
+  const setBusinessId = useSetAtom(activeBusinessIdAtom)
   const navigate = useNavigate()
   const location = useLocation()
   const creatingAdditional = location.pathname === '/nueva-libreta'
@@ -48,7 +49,8 @@ export function Onboarding() {
     try {
       const created = await createBusinessForCurrentUser({ ledgerName: ledgerName.trim(), businessName: businessName.trim(), ownerName: ownerName.trim(), businessType, phone, enabledModules: modules })
       setLedger(created)
-      navigate('/dashboard')
+      setBusinessId(created.id || null)
+      navigate('/dashboard', { replace: true })
     } catch (issue) {
       setError(issue instanceof Error ? issue.message : 'No pudimos crear tu libreta.')
       setSaving(false)

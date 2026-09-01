@@ -13,5 +13,6 @@ export async function syncSession(user: User) {
 
 export async function signedInDestination(user: User, requestedPath: string) {
   const { isAdmin } = await syncSession(user)
-  return isAdmin ? '/admin' : requestedPath
+  if (isAdmin) return '/admin'
+  return requestedPath.startsWith('/admin') ? '/onboarding' : requestedPath
 }

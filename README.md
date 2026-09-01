@@ -38,6 +38,8 @@ Un usuario puede crear como máximo dos libretas propias mientras ninguna tenga 
 
 Una cuenta puede administrar varias libretas y cambiar la activa desde el selector del dashboard. El panel de plataforma puede inspeccionar y configurar cualquier libreta sin agregar al administrador de plataforma como miembro ni mezclar sus datos con los de los usuarios.
 
+El propietario y la administración de plataforma pueden borrar definitivamente una libreta. La operación pasa por la Lambda, cancela primero cualquier suscripción de Stripe y después elimina datos, invitaciones y referencias de acceso.
+
 Desde ese panel, el administrador de plataforma puede conceder acceso ilimitado, fijar una fecha límite, suspender el acceso o devolver la libreta al control normal de su prueba y suscripción. Estos permisos se aplican también en las reglas de Firestore y cada libreta conserva su estado independiente en Stripe.
 
 La API migra automáticamente el formato anterior `businesses/{uid}` la próxima vez que el usuario inicie sesión.

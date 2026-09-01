@@ -4,7 +4,9 @@ export function useDeadlineClock(deadline?: string) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (!deadline) return
-    const remaining = new Date(deadline).getTime() - now
+    const deadlineTime = new Date(deadline).getTime()
+    if (!Number.isFinite(deadlineTime)) return
+    const remaining = deadlineTime - now
     if (remaining <= 0) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(remaining + 50, 2_147_483_647))
     return () => window.clearTimeout(timer)

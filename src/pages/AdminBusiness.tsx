@@ -1,6 +1,6 @@
-import { ArrowLeft, CalendarDays, Check, CreditCard, Infinity as InfinityIcon, RotateCcw, Save, ShieldAlert, Users } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Check, CreditCard, Infinity as InfinityIcon, RotateCcw, Save, ShieldAlert, Trash2, Users } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { authInputClass } from '../components/AuthLayout'
 import { apiRequest } from '../lib/api'
 import { normalizeLedger } from '../lib/empty-data'
@@ -9,6 +9,7 @@ import type { LedgerData, ProductModule } from '../lib/types'
 
 export function AdminBusiness() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const [business, setBusiness] = useState<LedgerData | null>(null)
   const [modules, setModules] = useState<ProductModule[]>([])
   const [accessDate, setAccessDate] = useState('')
@@ -86,6 +87,20 @@ export function AdminBusiness() {
     void subscriptionAction('grant-until', { accessUntil: accessUntil.toISOString() })
   }
 
+  const deleteLedger = async () => {
+    if (!business) return
+    const confirmation = window.prompt(`Esta acción es definitiva y cancelará cualquier suscripción. Escribe "${business.ledgerName}" para borrar la libreta.`)
+    if (confirmation !== business.ledgerName) return
+    setLoading(true); setError('')
+    try {
+      await apiRequest(`/businesses/${id}`, { method: 'DELETE' })
+      navigate('/admin', { replace: true })
+    } catch (issue) {
+      setError(issue instanceof Error ? issue.message : 'No pudimos borrar la libreta.')
+      setLoading(false)
+    }
+  }
+
   if (!business) return <main className="grid min-h-screen place-items-center bg-cream font-black text-ink/40">{error || 'Cargando libreta…'}</main>
 
   const subscription = business.subscription
@@ -109,5 +124,6 @@ export function AdminBusiness() {
       </div>
     </div>
     <section className="mt-5 rounded-[2rem] bg-white p-6 shadow-soft"><div className="flex items-center gap-2"><ShieldAlert size={20} /><h2 className="text-xl font-black">Actividad reciente</h2></div><div className="mt-5 grid gap-5 lg:grid-cols-2"><div><p className="text-sm font-black">Clientes</p><div className="mt-2 divide-y divide-ink/8">{business.customers.slice(0, 5).map((customer) => <div key={customer.id} className="flex justify-between py-3 text-sm"><span className="font-bold">{customer.name}</span><span className="text-ink/40">{customer.phone || 'Sin teléfono'}</span></div>)}</div></div><div><p className="text-sm font-black">Pedidos</p><div className="mt-2 divide-y divide-ink/8">{business.orders.slice(0, 5).map((order) => <div key={order.id} className="flex justify-between gap-3 py-3 text-sm"><span className="truncate font-bold">{order.items}</span><span className="shrink-0 text-ink/40">{order.status}</span></div>)}</div></div></div></section>
+    <section className="mt-5 rounded-[2rem] border border-coral/20 bg-white p-6 shadow-soft"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-black uppercase tracking-[.16em] text-coral">Zona de peligro</p><h2 className="mt-1 text-xl font-black">Borrar esta libreta</h2><p className="mt-1 text-sm font-semibold text-ink/45">Elimina todos los datos y accesos y cancela inmediatamente la suscripción de Stripe.</p></div><button type="button" disabled={loading} onClick={() => void deleteLedger()} className="flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-coral px-5 py-3.5 font-black text-white disabled:opacity-50"><Trash2 size={18} /> {loading ? 'Procesando…' : 'Borrar libreta'}</button></div></section>
   </div></main>
 }

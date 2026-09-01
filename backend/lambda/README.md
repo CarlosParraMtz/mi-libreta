@@ -11,6 +11,7 @@ Una sola Lambda atiende:
 - límite transaccional de dos libretas propias en prueba, desbloqueado cuando alguna suscripción de Stripe está activa;
 - Stripe Checkout, Customer Portal y webhook;
 - suspensión, restauración y cancelación programada de suscripciones.
+- eliminación definitiva de libretas por su propietario o por la administración de plataforma, con cancelación inmediata de Stripe.
 
 ## Variables requeridas
 
